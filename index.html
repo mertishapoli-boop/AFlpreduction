@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AFL Prediction – Where Matches Are Really Decided</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Nunito+Sans:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #08090f;
+    --surface:  #0f1320;
+    --card:     #131829;
+    --lime:     #c8f135;
+    --lime2:    #e0ff6a;
+    --electric: #3d9eff;
+    --violet:   #7c3aed;
+    --white:    #eef1f8;
+    --muted:    #6b7a95;
+    --border:   rgba(200,241,53,0.13);
+    --glow:     rgba(200,241,53,0.20);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 17px;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--lime); border-radius: 3px; }
+
+  /* ════════════ HEADER ════════════ */
+  header {
+    position: sticky; top: 0; z-index: 200;
+    background: rgba(8,9,15,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .h-wrap {
+    max-width: 1280px; margin: 0 auto;
+    padding: 0 36px;
+    height: 66px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 11px;
+    text-decoration: none; white-space: nowrap;
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    color: var(--white);
+  }
+  .logo-mark {
+    width: 38px; height: 38px;
+    background: var(--lime);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 0 20px var(--glow);
+    flex-shrink: 0;
+  }
+  .logo strong { color: var(--lime); }
+  nav { display: flex; align-items: center; gap: 2px; }
+  nav a {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 5px;
+    transition: color .2s, background .2s;
+    white-space: nowrap;
+  }
+  nav a:hover { color: var(--lime); background: rgba(200,241,53,0.07); }
+  .nav-pill {
+    background: var(--lime) !important;
+    color: var(--bg) !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    padding: 7px 22px !important;
+    box-shadow: 0 0 18px var(--glow);
+    transition: transform .2s, box-shadow .2s !important;
+  }
+  .nav-pill:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 28px var(--glow) !important; background: var(--lime2) !important; color: var(--bg) !important; }
+
+  /* ════════════ HERO ════════════ */
+  .hero {
+    position: relative;
+    min-height: 92vh;
+    display: flex; align-items: center;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  /* dot grid */
+  .hero-dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(200,241,53,0.18) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+  }
+  .hero-line {
+    position: absolute; top:0; right:0; bottom:0;
+    width: 52%;
+    background: linear-gradient(135deg, transparent 30%, rgba(200,241,53,0.04) 50%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-circle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(100px);
+  }
+  .hc1 { width:520px;height:520px;background:rgba(200,241,53,0.07);top:-120px;right:-80px;animation:hpulse 10s ease-in-out infinite; }
+  .hc2 { width:380px;height:380px;background:rgba(61,158,255,0.07);bottom:-60px;left:-60px;animation:hpulse 13s 2s ease-in-out infinite; }
+  @keyframes hpulse { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
+
+  .hero-inner {
+    position: relative; z-index: 2;
+    max-width: 1280px; margin: 0 auto;
+    padding: 80px 36px 100px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    width: 100%;
+  }
+  @media(max-width:900px){ .hero-inner{grid-template-columns:1fr;} .hero-right{display:none;} }
+
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(200,241,53,0.1);
+    border: 1px solid rgba(200,241,53,0.3);
+    border-radius: 100px;
+    padding: 5px 16px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--lime);
+    margin-bottom: 28px;
+    animation: riseUp .7s ease both;
+  }
+  .hero-tag::before { content:'●';font-size:.5rem;animation:blink 1.5s infinite; }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+  .hero-h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(3rem, 6.5vw, 6rem);
+    font-weight: 700;
+    line-height: .95;
+    letter-spacing: 1px;
+    color: var(--white);
+    margin-bottom: 8px;
+    animation: riseUp .8s .1s ease both;
+  }
+  .hero-h1 .lime { color: var(--lime); }
+  .hero-h1 .ghost {
+    -webkit-text-stroke: 2px var(--lime);
+    color: transparent;
+  }
+  .hero-desc {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 520px;
+    margin: 24px 0 44px;
+    line-height: 1.78;
+    animation: riseUp .9s .2s ease both;
+  }
+  .hero-links {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    animation: riseUp 1s .3s ease both;
+  }
+  .btn-lime {
+    display: inline-block;
+    background: var(--lime);
+    color: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 13px 36px;
+    border-radius: 7px;
+    box-shadow: 0 4px 28px var(--glow);
+    transition: transform .2s, box-shadow .2s, background .2s;
+  }
+  .btn-lime:hover { background: var(--lime2); transform: translateY(-3px); box-shadow: 0 8px 40px var(--glow); }
+  .btn-ghost {
+    display: inline-block;
+    border: 2px solid rgba(200,241,53,0.5);
+    color: var(--lime);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 11px 34px;
+    border-radius: 7px;
+    transition: background .2s, color .2s, transform .2s, border-color .2s;
+  }
+  .btn-ghost:hover { background: var(--lime); color: var(--bg); border-color: var(--lime); transform: translateY(-3px); }
+
+  @keyframes riseUp { from{opacity:0;transform:translateY(26px)} to{opacity:1;transform:none} }
+
+  /* right side hero graphic */
+  .hero-right {
+    display: flex; flex-direction: column; gap: 16px;
+    animation: riseUp 1s .3s ease both;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .stat-card-num {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--lime);
+    white-space: nowrap;
+  }
+  .stat-card-label { color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+  .stat-card-label strong { color: var(--white); display: block; font-size: 1rem; }
+  .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .mini-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .mini-val {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2rem;
+    color: var(--lime);
+  }
+  .mini-lbl { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; }
+
+  /* ════════════ BAND ════════════ */
+  .band {
+    background: var(--lime);
+    padding: 15px 28px;
+    text-align: center;
+  }
+  .band p {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--bg);
+  }
+  .band a { color: var(--bg); text-decoration: underline; }
+
+  /* ════════════ SECTION SHARED ════════════ */
+  .section-wrap { max-width: 1280px; margin: 0 auto; padding: 0 36px; }
+  .article-section { padding: 100px 0; }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: var(--lime);
+    margin-bottom: 14px;
+  }
+  .eyebrow::after { content:''; display:block; width:28px; height:2px; background:var(--lime); }
+
+  .sec-h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 700;
+    letter-spacing: .5px;
+    line-height: 1.04;
+    color: var(--white);
+    margin-bottom: 20px;
+  }
+  .sec-h2 .lime { color: var(--lime); }
+
+  .lead { font-size: 1.15rem; color: #c0ccd8; line-height: 1.82; max-width: 700px; margin-bottom: 28px; }
+  p { color: #8899aa; margin-bottom: 20px; }
+
+  /* two-col */
+  .two-col { display: grid; grid-template-columns: 1fr 360px; gap: 64px; align-items: start; }
+  @media(max-width:960px){ .two-col{grid-template-columns:1fr;} }
+
+  /* ── CONTENT CARDS ── */
+  .icard {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 28px 30px 36px;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .25s, box-shadow .25s, border-color .25s;
+  }
+  .icard:hover { transform: translateY(-5px); box-shadow: 0 16px 52px rgba(200,241,53,0.10); border-color: rgba(200,241,53,0.28); }
+  .icard::before {
+    content:'';
+    position: absolute; top:0; left:0;
+    width: 5px; height: 100%;
+    background: linear-gradient(180deg, var(--lime), var(--electric));
+  }
+  .icard-n {
+    position: absolute; top:14px; right:18px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 4rem;
+    color: rgba(200,241,53,0.06);
+    line-height: 1;
+    pointer-events: none;
+  }
+  .icard-icon { font-size: 1.9rem; margin-bottom: 12px; }
+  .icard h3 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 10px;
+    letter-spacing: .5px;
+  }
+  .icard p { color: #7a8ca0; margin: 0; font-size: 0.96rem; }
+
+  /* pullquote */
+  .pullquote {
+    position: relative;
+    background: linear-gradient(135deg, rgba(200,241,53,0.07), rgba(61,158,255,0.04));
+    border-left: 5px solid var(--lime);
+    border-radius: 0 12px 12px 0;
+    padding: 28px 32px;
+    margin: 40px 0;
+  }
+  .pullquote::before {
+    content: '"';
+    position: absolute; top: -10px; left: 24px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 5rem;
+    color: rgba(200,241,53,0.18);
+    line-height: 1;
+  }
+  .pullquote p {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.28rem;
+    font-weight: 600;
+    color: var(--lime2);
+    margin: 0;
+    line-height: 1.5;
+    position: relative;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar { position: sticky; top: 80px; }
+  .sbox {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 22px;
+  }
+  .sbox h4 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 1px;
+    color: var(--lime);
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex; gap: 10px; align-items: flex-start;
+    color: #7a8ca0;
+    font-size: 0.93rem;
+    margin-bottom: 13px;
+    line-height: 1.5;
+  }
+  .checklist li::before { content:'▸'; color: var(--lime); flex-shrink: 0; margin-top: 1px; }
+
+  .s-link {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(200,241,53,0.07);
+    border: 1px solid rgba(200,241,53,0.18);
+    border-radius: 9px;
+    padding: 13px 16px;
+    text-decoration: none;
+    color: var(--lime);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    transition: background .2s, transform .2s;
+  }
+  .s-link:hover { background: rgba(200,241,53,0.14); transform: translateX(5px); }
+  .s-link::after { content: '→'; font-size: 1rem; }
+
+  /* ════════════ PILLARS ════════════ */
+  .pillars-sec {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 90px 0;
+  }
+  .pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+    gap: 22px;
+    margin-top: 52px;
+  }
+  .pillar {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 36px 26px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .25s, transform .25s;
+    cursor: default;
+  }
+  .pillar:hover { border-color: rgba(200,241,53,0.38); transform: translateY(-6px); }
+  .pillar-bar {
+    position: absolute; bottom:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--lime), var(--electric));
+    transform: scaleX(0); transition: transform .35s; transform-origin: left;
+  }
+  .pillar:hover .pillar-bar { transform: scaleX(1); }
+  .p-num {
+    font-family: 'Oswald', sans-serif;
+    font-size: 3.6rem;
+    color: rgba(200,241,53,0.09);
+    line-height: 1; margin-bottom: 14px;
+  }
+  .pillar h3 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 10px;
+  }
+  .pillar p { color: #6b7a90; font-size: 0.93rem; margin: 0; }
+
+  /* ════════════ CTA ════════════ */
+  .cta-sec {
+    padding: 110px 0;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    background: var(--bg);
+  }
+  .cta-bg-text {
+    position: absolute;
+    font-family: 'Oswald', sans-serif;
+    font-size: 24vw;
+    color: rgba(200,241,53,0.025);
+    top:50%; left:50%;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+    white-space: nowrap;
+    letter-spacing: -8px;
+  }
+  .cta-sec .sec-h2 { font-size: clamp(2.4rem,5.5vw,4.5rem); margin-bottom: 16px; }
+  .cta-sec .lead { margin: 0 auto 46px; text-align: center; }
+  .cta-row { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
+
+  /* ════════════ FOOTER ════════════ */
+  footer {
+    background: #05060b;
+    border-top: 1px solid var(--border);
+    padding: 72px 0 34px;
+  }
+  .f-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 52px;
+    margin-bottom: 54px;
+  }
+  @media(max-width:760px){ .f-grid{grid-template-columns:1fr;gap:32px;} }
+
+  .f-logo { display: inline-flex; margin-bottom: 16px; }
+  .f-brand p { color: #3b4a5a; font-size: 0.92rem; line-height: 1.72; }
+
+  .socials { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  .soc {
+    width: 42px; height: 42px;
+    border-radius: 9px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    transition: background .2s, color .2s, border-color .2s, transform .2s;
+  }
+  .soc:hover { background: var(--lime); color: var(--bg); border-color: var(--lime); transform: translateY(-3px); }
+
+  .f-col h5 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--lime);
+    margin-bottom: 18px;
+  }
+  .f-col ul { list-style: none; }
+  .f-col li { margin-bottom: 10px; }
+  .f-col a {
+    color: #3b4a5a;
+    text-decoration: none;
+    font-size: 0.92rem;
+    transition: color .2s;
+  }
+  .f-col a:hover { color: var(--lime); }
+
+  .f-bottom {
+    border-top: 1px solid var(--border);
+    padding-top: 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .f-bottom p { color: #273040; font-size: 0.83rem; margin: 0; }
+  .f-bottom a { color: var(--lime); text-decoration: none; }
+
+  @media(max-width:600px){
+    .h-wrap { padding: 0 16px; }
+    nav a { font-size: 0.82rem; padding: 5px 8px; }
+    .article-section, .pillars-sec { padding: 60px 0; }
+    .section-wrap { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════ HEADER ════════════════ -->
+<header>
+  <div class="h-wrap">
+    <a href="https://afl-prediction.com/" class="logo">
+      <div class="logo-mark">🏉</div>
+      AFL<strong>Predict</strong>
+    </a>
+    <nav>
+      <a href="#midfield">Midfield</a>
+      <a href="#matchups">Matchups</a>
+      <a href="#pressure">Pressure</a>
+      <a href="#venue">Venue</a>
+      <a href="https://afl-prediction-7jy.pages.dev/" class="nav-pill">Match Predictor</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ════════════════ HERO ════════════════ -->
+<section class="hero">
+  <div class="hero-dots"></div>
+  <div class="hero-line"></div>
+  <div class="hero-circle hc1"></div>
+  <div class="hero-circle hc2"></div>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-tag">Live Season Intelligence</div>
+      <h1 class="hero-h1">
+        Where<br>
+        Matches<br>
+        <span class="lime">Are <span class="ghost">Decided</span></span>
+      </h1>
+      <p class="hero-desc">AFL prediction starts before the opening bounce. Before the first clearance is won, the match is already being shaped — in matchups, momentum, pressure, and preparation.</p>
+      <div class="hero-links">
+        <a href="https://afl-prediction.com/" class="btn-lime">AFL Prediction Hub</a>
+        <a href="https://afl-prediction-7jy.pages.dev/" class="btn-ghost">Open Match Predictor</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="stat-card">
+        <div class="stat-card-num">207+</div>
+        <div class="stat-card-label">
+          <strong>Matches Per Season</strong>
+          Every game analyzed across all 18 clubs
+        </div>
+      </div>
+      <div class="mini-grid">
+        <div class="mini-card">
+          <div class="mini-val">18</div>
+          <div class="mini-lbl">Teams</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-val">6</div>
+          <div class="mini-lbl">Key Factors</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-val">4</div>
+          <div class="mini-lbl">Quarters</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-val">∞</div>
+          <div class="mini-lbl">Upsets</div>
+        </div>
+      </div>
+      <div class="stat-card" style="background:linear-gradient(135deg,rgba(200,241,53,0.09),rgba(61,158,255,0.06));border-color:rgba(200,241,53,0.25);">
+        <div style="font-size:2rem;">🏆</div>
+        <div class="stat-card-label">
+          <strong style="color:var(--lime);">Smarter Picks</strong>
+          Form, matchups, pressure, conditions — all in one place
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ BAND ════════════════ -->
+<div class="band">
+  <p>Go deeper before every match — the complete guide lives at <a href="https://afl-prediction.com/">AFL Prediction</a></p>
+</div>
+
+<!-- ════════════════ MAIN ARTICLE ════════════════ -->
+<section class="article-section">
+  <div class="section-wrap">
+    <div class="two-col">
+
+      <!-- MAIN CONTENT -->
+      <div>
+        <div class="eyebrow">Beyond the Scoreboard</div>
+        <h2 class="sec-h2">AFL Prediction: <span class="lime">More Than Form</span></h2>
+        <p class="lead">AFL prediction is one of the most exciting parts of following the game because it begins before the opening bounce. Every selection choice matters. Every injury update changes the balance. Every tactical matchup offers a clue. It is not just about choosing a team — it is about reading the contest before it reveals itself.</p>
+        <p>What makes Australian Rules Football so difficult to predict is the speed and chaos that define it. A team can control territory, dominate possession, and still find itself under real pressure because of wasted chances. Another side can look second-best for long periods, then produce one explosive burst that changes everything. In AFL, momentum is never still — it moves fast, swings hard, and tests every prediction.</p>
+        <p>Most people start with form, and that is natural. Winning teams usually carry belief, better energy, and stronger confidence in their system. But form only tells part of the story. A side that wins through discipline and control is very different from one that wins through brief scoring bursts. Likewise, a losing team that continues to compete hard in the contest may be much stronger than its recent record suggests.</p>
+
+        <div class="pullquote">
+          <p>Good AFL prediction separates itself from lazy tipping by asking not only what the result was, but how the result was created — and what that reveals about the next contest.</p>
+        </div>
+
+        <div class="icard" id="midfield">
+          <div class="icard-n">01</div>
+          <div class="icard-icon">⚡</div>
+          <h3>The Midfield Contest Sets the Tone</h3>
+          <p>If there is one area that shapes almost every AFL match, it is the midfield. This is where games gain rhythm, where pressure begins, and where control of the ball becomes control of the afternoon. Strong midfield play protects the defense, helps forwards by delivering better supply, and forces the opposition to defend deeper. Smart analysis goes beyond star names — the better question is which unit is more balanced, disciplined, and capable of working together under pressure.</p>
+        </div>
+
+        <div class="icard" id="matchups">
+          <div class="icard-n">02</div>
+          <div class="icard-icon">🔀</div>
+          <h3>Matchups Decide More Than Ladder Position</h3>
+          <p>One of the biggest mistakes in AFL prediction is assuming the higher-ranked side automatically holds the edge. Ladder position matters, but football is often decided by matchups rather than status. A side that thrives on quick ball movement may struggle against an opponent that defends space well. A team built around contested football may drag a more skillful opponent into a game style it never wanted. The better team overall is not always the better team for that specific game.</p>
+        </div>
+
+        <div class="icard" id="pressure">
+          <div class="icard-n">03</div>
+          <div class="icard-icon">🔥</div>
+          <h3>Pressure Changes Everything</h3>
+          <p>AFL is not only about skill. It is also about how skill holds up when time disappears and physical pressure rises. Pressure turns small mistakes into big moments — it disrupts rhythm, destroys confidence, and exposes teams that rely too much on clean, open football. Composure matters just as much: good sides stay calm, trust their structure, and keep making disciplined decisions instead of emotional ones. In close matches, that mental control often becomes the hidden difference between winning and losing.</p>
+        </div>
+
+        <div class="icard" id="venue">
+          <div class="icard-n">04</div>
+          <div class="icard-icon">🌦️</div>
+          <h3>Venue and Conditions Matter More Than People Think</h3>
+          <p>AFL is a sport deeply shaped by environment. Home ground advantage is real — teams know the angles, space, wind, and rhythm of their venue. Travel changes preparation, routine, and recovery. Dry weather benefits teams that want to move quickly and use skill. Wet conditions reward pressure, contested work, and territory-based football. A side that looks dangerous in open conditions can become much less effective when the game turns scrappy.</p>
+        </div>
+
+        <p style="margin-top:36px;">Even the smartest AFL prediction can be overturned in minutes. A key injury, a hot start, a run of inaccuracy, or a sudden shift in emotion can rewrite everything. But that is not a weakness in prediction — it is part of what makes the sport compelling. AFL does not reward certainty. It rewards understanding. The goal is to recognize the patterns that make one outcome more likely than another.</p>
+
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:46px;">
+          <a href="https://afl-prediction.com/" class="btn-lime">Explore AFL Prediction</a>
+          <a href="https://afl-prediction-7jy.pages.dev/" class="btn-ghost">Try the Match Predictor</a>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sbox">
+          <h4>🏆 Smart Prediction Checklist</h4>
+          <ul class="checklist">
+            <li>Who wins the midfield stoppage battle?</li>
+            <li>Is form against strong or weak opposition?</li>
+            <li>Four-quarter consistency or short bursts?</li>
+            <li>Style matchup advantages in play?</li>
+            <li>Home ground or away travel?</li>
+            <li>What do conditions favor?</li>
+            <li>Key injuries or late changes?</li>
+            <li>How does each side react under pressure?</li>
+          </ul>
+        </div>
+        <div class="sbox">
+          <h4>🔗 Explore More</h4>
+          <a href="https://afl-prediction.com/" class="s-link">AFL Prediction Guide</a>
+          <a href="https://afl-prediction-7jy.pages.dev/" class="s-link">Live Match Predictor</a>
+        </div>
+        <div class="sbox" style="background:linear-gradient(135deg,rgba(200,241,53,0.06),rgba(61,158,255,0.04));border-color:rgba(200,241,53,0.22);">
+          <h4 style="color:var(--white);">Why Prediction Matters</h4>
+          <p style="color:#6b7a90;font-size:0.92rem;margin:0;line-height:1.7;">Good predictions still matter even when they are wrong. They force fans to think more clearly, look more closely, and appreciate the layers that make Australian Rules Football such a powerful sport to follow.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ PILLARS ════════════════ -->
+<section class="pillars-sec">
+  <div class="section-wrap">
+    <div class="eyebrow">What Really Decides Games</div>
+    <h2 class="sec-h2">The <span class="lime">6 Pillars</span> Behind Every Smart Pick</h2>
+    <div class="pillars-grid">
+      <div class="pillar">
+        <div class="pillar-bar"></div>
+        <div class="p-num">01</div>
+        <h3>Midfield Control</h3>
+        <p>Clearance wins and contested ball set the platform before any forward or defender gets involved.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-bar"></div>
+        <div class="p-num">02</div>
+        <h3>Opposition Quality</h3>
+        <p>Three wins against weak teams reveal far less than one competitive loss against an elite opponent.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-bar"></div>
+        <div class="p-num">03</div>
+        <h3>Style Matchup</h3>
+        <p>Strengths mean nothing if they are neutralized by how the opposition naturally plays its game.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-bar"></div>
+        <div class="p-num">04</div>
+        <h3>Pressure & Composure</h3>
+        <p>Teams that stay calm when tackles mount and the game gets tight almost always outperform predictions.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-bar"></div>
+        <div class="p-num">05</div>
+        <h3>Home Ground Edge</h3>
+        <p>Familiar dimensions, crowd energy, and zero travel fatigue quietly transform average teams into real dangers.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-bar"></div>
+        <div class="p-num">06</div>
+        <h3>Weather & Conditions</h3>
+        <p>Wet weather tilts the contest toward structure and toughness. Dry conditions reward pace and clean skill.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ CTA ════════════════ -->
+<section class="cta-sec">
+  <div class="cta-bg-text">AFL</div>
+  <div class="section-wrap" style="position:relative;z-index:1;">
+    <div class="eyebrow" style="justify-content:center;">Start Reading the Game Differently</div>
+    <h2 class="sec-h2">Ready to Predict <span class="lime">Smarter?</span></h2>
+    <p class="lead">Dive into pre-match breakdowns, key form indicators, matchup analysis, and the patterns that separate sharp predictions from casual tipping.</p>
+    <div class="cta-row">
+      <a href="https://afl-prediction.com/" class="btn-lime">Visit AFL Prediction</a>
+      <a href="https://afl-prediction-7jy.pages.dev/" class="btn-ghost">Open Match Predictor</a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer>
+  <div class="section-wrap">
+    <div class="f-grid">
+      <div class="f-brand">
+        <a href="https://afl-prediction.com/" class="logo f-logo">
+          <div class="logo-mark">🏉</div>
+          AFL<strong>Predict</strong>
+        </a>
+        <p>The smartest AFL prediction resource for fans who want to go beyond the scoreboard. Understand form, matchups, pressure, and conditions before the first bounce every week.</p>
+        <div class="socials">
+          <a href="#" class="soc" title="Twitter / X" aria-label="Twitter">𝕏</a>
+          <a href="#" class="soc" title="Facebook" aria-label="Facebook">f</a>
+          <a href="#" class="soc" title="Instagram" aria-label="Instagram">📸</a>
+          <a href="#" class="soc" title="YouTube" aria-label="YouTube">▶</a>
+          <a href="#" class="soc" title="TikTok" aria-label="TikTok">♪</a>
+          <a href="#" class="soc" title="Reddit" aria-label="Reddit">r/</a>
+        </div>
+      </div>
+      <div class="f-col">
+        <h5>Prediction Guide</h5>
+        <ul>
+          <li><a href="#midfield">Midfield Analysis</a></li>
+          <li><a href="#matchups">Style Matchups</a></li>
+          <li><a href="#pressure">Pressure & Composure</a></li>
+          <li><a href="#venue">Venue & Conditions</a></li>
+          <li><a href="https://afl-prediction.com/">Full AFL Prediction Guide</a></li>
+        </ul>
+      </div>
+      <div class="f-col">
+        <h5>Resources</h5>
+        <ul>
+          <li><a href="https://afl-prediction.com/">AFL Prediction Hub</a></li>
+          <li><a href="https://afl-prediction-7jy.pages.dev/">Match Predictor Tool</a></li>
+          <li><a href="#">Season Form Guide</a></li>
+          <li><a href="#">Head-to-Head Stats</a></li>
+          <li><a href="#">Injury Tracker</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="f-bottom">
+      <p>© 2025 <a href="https://afl-prediction.com/">AFL Prediction</a>. All rights reserved.</p>
+      <p>For entertainment purposes. Please gamble responsibly.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
+
+
